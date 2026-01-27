@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artistes - Groupie Trackers</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">🎵 Groupie Trackers</h1>
+            <ul class="nav-links">
+                <li><a href="/">Accueil</a></li>
+                <li><a href="/artists.html" class="active">Artistes</a></li>
+                <li><a href="/locations.html">Lieux</a></li>
+                <li><a href="/dates.html">Dates</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="container">
+        <h2>Artistes</h2>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Rechercher un artiste...">
+        </div>
+
+        <div id="artistsList" class="grid-artists"></div>
+        <div id="loading" class="loading">Chargement...</div>
+        <div id="error" class="error"></div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Groupie Trackers</p>
+    </footer>
+
+    <script src="/js/artists.js"></script>
+</body>
+</html>
