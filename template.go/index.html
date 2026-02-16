@@ -1,0 +1,28 @@
+{{ define "index" }}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Groupie Tracker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <h1>🎵 Groupie Tracker</h1>
+
+    <div class="artists">
+        {{ range . }}
+            <div class="card">
+                <h2>{{ .Name }}</h2>
+                <img src="{{ .Image }}" alt="{{ .Name }}" width="200">
+                <p>Créé en : {{ .CreationDate }}</p>
+                <p>Premier album : {{ .FirstAlbum }}</p>
+            </div>
+        {{ end }}
+    </div>
+
+</body>
+</html>
+
+{{ end }}
