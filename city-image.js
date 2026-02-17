@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const loading = document.getElementById("loading");
     const error = document.getElementById("error");
 
-    // Associe une ville à une image
     const cityImages = {
         "paris": "/images/cities/paris.jpg",
         "london": "/images/cities/london.jpg",
