@@ -9,6 +9,7 @@ import (
 	"net/http" i
 	"os"
 	"sort"
+	"osm"
 )
 
 func fetch(url string) []byte {
