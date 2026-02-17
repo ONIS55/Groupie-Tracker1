@@ -1,0 +1,427 @@
+🏗️ Architecture du projet
+
+Structure des dossiers :
+/home/onis/Ynov/Groupi-Tracker/
+├── server.go                    ← Serveur backend Go (racine du projet)
+├── README.md                     ← Documentation complète
+├── scripts/                      ← Scripts de test
+│   ├── README.md
+│   ├── mai.go
+│   ├── Artists.go
+│   ├── Dates.go
+│   └── Location.go
+└── static/                       ← Fichiers frontend
+    ├── index.html               ← Page d'accueil
+    ├── artists.html             ← Liste des artistes
+    ├── artist-detail.html       ← Détail d'un artiste
+    ├── locations.html           ← Lieux de concert
+    ├── dates.html               ← Dates de concert
+    ├── css/
+    │   └── style.css            ← 630 lignes de styles
+    └── js/
+        ├── utils.js             ← Fonctions partagées (NOUVEAU)
+        ├── city-images.js       ← Gestion images Pexels (NOUVEAU)
+        ├── artists.js           ← Logique page artistes
+        ├── artist-detail.js     ← Logique détail artiste
+        ├── locations.js         ← Logique page lieux
+        └── dates.js             ← Logique page dates
+
+================================================================================
+
+Backend (Go)
+
+1. server.go (racine du projet) - Serveur principal
+   Ligne 12 : Clé API Pexels stockée côté serveur (sécurité)
+   Ligne 16 : Sert les fichiers statiques depuis ./static
+   Lignes 19-22 : Définit 4 routes API :
+      /api/artists → récupère la liste des artistes
+      /api/locations → récupère les lieux de concert
+      /api/dates → récupère les dates de concert
+      /api/city-image → récupère images Pexels (NOUVEAU)
+   Ligne 36 : Lance le serveur sur le port 8080
+
+   Lignes 40-53 : proxyAPI(endpoint) - Fonction proxy UNIFIÉE
+      AMÉLIORATION : Une seule fonction pour 3 endpoints (au lieu de 3 fonctions identiques)
+      Ligne 42 : Fait requête GET vers API externe
+      Ligne 47 : defer resp.Body.Close() ferme connexion automatiquement
+      Ligne 49 : Lit tout le contenu de la réponse
+      Lignes 50-51 : Renvoie le JSON directement au client
+
+   Lignes 56-118 : handleCityImage() - Récupère images de villes via Pexels
+      Ligne 58 : Récupère le paramètre ?city=... de l'URL
+      Lignes 65-66 : Construit URL Pexels avec nom ville + " city"
+      Ligne 76 : Ajoute clé API dans header Authorization
+      Lignes 95-101 : Structure anonyme pour parser JSON Pexels
+      Ligne 103 : json.Unmarshal() convertit JSON en structure Go
+      Lignes 110-114 : Retourne URL image ou chaîne vide si aucune
+      Ligne 117 : Encode et envoie réponse JSON au client
+
+================================================================================
+
+Frontend - Fichiers Utilitaires (NOUVEAU)
+
+1. utils.js - Fonctions partagées (51 lignes)
+   AMÉLIORATION : Évite duplication de code dans 3 fichiers différents
+
+   Lignes 8-16 : hashToHue(value)
+      Génère une couleur unique (teinte HSL 0-360) basée sur hash d'un texte
+      Ligne 12 : (hash << 5) - hash = algorithme de hash
+      Ligne 15 : Math.abs(hash) % 360 limite entre 0-359
+      Utilisation : Même nom = toujours même couleur
+
+   Lignes 23-28 : normalize(value)
+      Normalise texte pour recherche (minuscules, trim, remplace _)
+      "Paris" → "paris" | "new_york" → "new york"
+
+   Lignes 35-41 : parseId(id)
+      Valide qu'un ID est un nombre positif
+      Ligne 36 : parseInt(id, 10) convertit en nombre base 10
+      Ligne 37 : Retourne null si NaN ou < 1
+      SÉCURITÉ : Empêche IDs invalides
+
+   Lignes 48-50 : formatDateLabel(value)
+      Supprime astérisque devant dates
+      "*2015-06-20" → "2015-06-20"
+
+2. city-images.js - Gestion images Pexels (43 lignes)
+   AMÉLIORATION : Cache Map + Images réelles via Pexels API
+
+   Ligne 2 : imageCache = new Map()
+      Cache URLs images pour éviter requêtes répétées
+      Structure : "paris-france" → "https://images.pexels.com/..."
+
+   Lignes 5-36 : getCityImageUrl(location)
+      Ligne 7-9 : Vérifie cache, retourne immédiatement si trouvé
+      Lignes 13-16 : Extrait nom ville : "paris-france" → "paris"
+      Ligne 20 : Requête vers /api/city-image?city=...
+      Ligne 25 : Sauvegarde dans cache
+      Lignes 33-35 : Fallback vers Lorem Picsum si Pexels échoue
+
+   Lignes 39-42 : getFallbackImageUrl(location)
+      Ligne 40 : Calcule ID unique entre 0-999
+      Ligne 41 : Retourne URL Lorem Picsum (400×300px)
+
+================================================================================
+
+Frontend - Pages Principales
+
+1. index.html - Page d'accueil
+   Navigation avec 4 liens (Accueil, Artistes, Lieux, Dates)
+   Section hero avec bouton "Voir les Artistes"
+   3 cartes cliquables menant vers chaque section
+   Aucun JavaScript (page statique)
+
+2. artists.html - Page principale des artistes
+   Structure :
+      Barre latérale (sidebar) avec "bulles" cliquables par artiste
+      Zone de recherche + bouton recherche avancée (🔍)
+      Panneau filtres avancés pour filtrer par :
+         Lieux (ex: "paris")
+         Dates (ex: "2015-06-20")
+         Plage d'années (De/À)
+   Scripts chargés : utils.js PUIS artists.js (ordre important!)
+
+3. artists.js - Logique page artistes (201 lignes)
+   Variables globales (lignes 1-3) :
+      allArtists = [] : Tableau de tous les artistes
+      artistLocationsById = new Map() : Map ID → lieux
+      artistDatesById = new Map() : Map ID → dates
+
+   Lignes 5-8 : Initialisation
+      Ligne 6 : Promise.all() charge 3 APIs EN PARALLÈLE (plus rapide)
+      Ligne 7 : Configure événements de recherche
+
+   Lignes 10-33 : loadArtists()
+      Récupère artistes depuis /api/artists
+      Ligne 20 : fetch('/api/artists')
+      Ligne 24 : Affiche bulles dans sidebar
+      Ligne 25 : Affiche cartes d'artistes
+      Ligne 31 : finally cache "Chargement..." dans tous les cas
+
+   Lignes 35-49 : loadLocations()
+      Stocke lieux dans Map indexée par ID d'artiste
+      Ligne 44 : artistLocationsById.set(item.id, item.locations)
+
+   Lignes 51-74 : loadDates()
+      Stocke dates dans Map (gère 3 formats différents d'API)
+      Lignes 53-68 : Gestion formats multiples
+
+   Lignes 76-101 : displayArtists(artists)
+      Affiche cartes d'artistes avec :
+         Ligne 89-90 : Couleur fond générée par hash du nom
+         Nombre membres, date création, premier album
+         Lien vers page détail
+
+   Lignes 103-182 : setupSearch() - Recherche avancée
+      Ligne 115 : Fonction applyFilters() applique tous critères
+      Ligne 122 : filter() crée nouveau tableau filtré
+      Ligne 123 : Filtre par nom d'artiste
+      Lignes 127-131 : Filtre par lieu (si checkbox cochée)
+      Ligne 129 : some() = true si AU MOINS un lieu correspond
+      Lignes 133-137 : Filtre par date exacte
+      Lignes 139-146 : Filtre par plage d'années
+      Ligne 141 : Extrait années : "2015-06-20" → 2015
+      Lignes 154-157 : Toggle panneau recherche avancée
+      Lignes 159-166 : Événements 'input' pour filtrage temps réel
+      Lignes 168-181 : Clic bulle remplit recherche et scroll
+
+   Lignes 184-200 : renderArtistBubbles(artists)
+      Crée boutons colorés dans sidebar
+      Ligne 194 : dataset.artist crée attribut data-artist="nom"
+      Ligne 197 : Couleur plus saturée que cartes (55% vs 92%)
+
+4. artist-detail.html - Page détail d'un artiste
+   Ligne 23 : Conteneur <div id="artistDetail"> VIDE
+   Tout HTML généré dynamiquement par JavaScript
+   Scripts : utils.js PUIS artist-detail.js
+
+5. artist-detail.js - Logique détail artiste (172 lignes)
+   Lignes 1-13 : Initialisation et validation ID
+      Ligne 2 : URLSearchParams parse ?id=5
+      Ligne 6 : parseId() valide que ID est nombre > 0
+      Ligne 8 : Redirige vers /artists.html si ID invalide
+
+   Lignes 15-59 : loadArtistDetail(artistId)
+      Lignes 25-29 : 3 requêtes API EN PARALLÈLE avec Promise.all()
+      Ligne 39 : find() recherche artiste avec cet ID
+      Lignes 48-49 : Récupère lieux et dates spécifiques
+
+   Lignes 77-130 : displayArtistDetail() - Génère tout le HTML
+      Ligne 82 : En-tête avec gradient couleur unique (2 teintes)
+      Ligne 83 : Image de l'artiste
+      Lignes 94-96 : Section Histoire avec biographie auto-générée
+      Lignes 100-103 : Section Membres (tags cliquables)
+      Lignes 107-112 : Section Lieux (tous les lieux)
+      Lignes 116-122 : Section Dates (12 premières + compteur)
+      Ligne 119 : slice(0, 12) limite à 12 dates affichées
+      Ligne 121 : Affiche "+ X autres dates" si > 12
+
+   Lignes 132-171 : generateBiography() - Génère bio intelligente
+      Génération automatique : Texte cohérent en français
+      Lignes 134-135 : "artiste solo" ou "groupe de X membres"
+      Ligne 143 : join(', ') crée liste membres
+      Ligne 149 : Compte et format concerts
+      Lignes 154-160 : Extrait pays uniques :
+         map() : "paris-france" → "france"
+         filter(Boolean) : Supprime valeurs vides
+         new Set() : Élimine doublons
+         [...] : Convertit Set en tableau
+      Ligne 156 : slice(0, 3) prend 3 premiers pays
+
+6. locations.html - Page des lieux
+   Ligne 26 : Champ de recherche
+   Ligne 29 : Grille cartes lieux
+   Scripts : utils.js, city-images.js, locations.js (ordre important!)
+
+7. locations.js - Logique page lieux (101 lignes)
+   Lignes 17-40 : loadLocations()
+      Ligne 24 : new Set() extrait lieux uniques
+      Lignes 25-29 : Double boucle collecte tous lieux
+      Ligne 30 : Array.from(locationsSet).sort() trie alphabétiquement
+
+   Lignes 42-89 : displayLocations() - Chargement progressif
+      PROGRESSIVE ENHANCEMENT : Gradient immédiat → Image async
+      Lignes 57-63 : Gradient multi-couleurs (4 teintes avec alpha)
+      Ligne 65 : Applique gradient immédiatement
+      Ligne 67 : Ajoute carte au DOM (AVANT image!)
+      Ligne 71 : Charge image ASYNCHRONEMENT
+      Lignes 74-78 : Remplace par image quand chargée :
+         Overlay noir semi-transparent (10-25%)
+         backgroundSize: 'cover' remplit conteneur
+         backgroundPosition: 'center' centre image
+      Lignes 79-82 : Garde gradient si image échoue
+
+   Lignes 91-100 : setupSearch()
+      Ligne 93 : Événement 'keyup' sur chaque touche
+      Ligne 96 : Filtre et réaffiche temps réel
+
+8. dates.html - Page des dates
+   Ligne 25 : Liste dates
+   Lignes 26-30 : Contrôles pagination (Précédent / Page X/Y / Suivant)
+   Script : dates.js seulement
+
+9. dates.js - Logique page dates (136 lignes)
+   Variables globales (lignes 1-3) :
+      datesEntries = [] : Toutes entrées dates
+      currentPage = 1 : Page actuelle
+      itemsPerPage = 12 : Nombre items par page
+
+   Lignes 36-54 : displayDates(datesData)
+      Ligne 40 : Normalise format API
+      Ligne 47 : Object.keys() récupère toutes clés
+      Ligne 48 : map() transforme en objets {id, dates}
+      Ligne 49 : filter() garde seulement valides
+      Ligne 50 : sort() trie par ID numérique
+
+   Lignes 56-77 : normalizeDatesIndex() - Gère 4 formats API
+      Format 1 : {index: [{id: 1, dates: [...]}]}
+      Format 2 : {index: {"1": [...], "2": [...]}}
+      Format 3 : {"1": [...], "2": [...]}
+      Format 4 : null/undefined → objet vide
+
+   Lignes 91-115 : renderDatesPage() - Pagination
+      Ligne 99 : Math.ceil() arrondit haut : 13/12 = 1.08 → 2 pages
+      Ligne 100 : Empêche currentPage invalide
+      Ligne 102 : Calcul index départ : Page 2 = (2-1)*12 = 12
+      Ligne 103 : slice() extrait 12 éléments
+      Lignes 113-114 : Active/désactive boutons selon page
+
+   Lignes 117-135 : setupPagination()
+      Lignes 121-126 : Bouton "Précédent" décrémente page
+      Lignes 128-134 : Bouton "Suivant" incrémente page
+
+================================================================================
+
+🎨 Fonctionnalités clés
+
+Couleurs dynamiques uniques
+   Chaque artiste/lieu a couleur unique générée par hash de son nom
+   Algorithme : Hash du nom → Teinte HSL (0-360)
+   Même nom = toujours même couleur
+   Utilisation : Cartes artistes, bulles, en-têtes, lieux
+
+Recherche avancée multi-critères
+   Nom d'artiste : Recherche textuelle temps réel
+   Lieux : Filtre par ville/pays (ex: "paris")
+   Dates : Recherche par date exacte (ex: "2015-06-20")
+   Années : Plage d'années (De/À)
+   Combinable : Tous filtres peuvent être combinés
+   Temps réel : Résultats instantanés pendant frappe
+
+Pagination intelligente
+   Page dates : 12 items par page
+   Calcul dynamique : Nombre total pages ajusté automatiquement
+   Boutons désactivés : Précédent (page 1) / Suivant (dernière page)
+   Navigation fluide entre pages
+
+Biographie automatique
+   Génération : Texte cohérent en français basé sur données
+   Contenu : Type (solo/groupe), membres, historique, statistiques
+   Adaptation : Singulier/pluriel, compteurs dynamiques
+   Intelligence : Extrait pays uniques, compte concerts
+
+Images dynamiques avec fallback
+   Source principale : API Pexels (photos réelles villes)
+   Cache Map : Évite requêtes répétées
+   Fallback : Lorem Picsum si Pexels échoue
+   Progressive Enhancement : Gradient → Image async
+   Performance : Image chargée en arrière-plan
+
+Interface responsive
+   Design adaptatif avec CSS (630 lignes)
+   Sidebar collapsible sur mobile
+   Grilles flexibles (CSS Grid + Flexbox)
+   Navigation tactile optimisée
+
+Performance optimisée
+   Promise.all() : Requêtes API parallèles (300ms au lieu de 900ms)
+   Cache Map : Images villes (0ms au lieu de 500ms)
+   Pagination : Limite affichage (12/page au lieu de tout)
+   Chargement async : Images en arrière-plan
+   Code refactorisé : Moins duplication
+
+================================================================================
+
+🔄 Flux de données
+
+API externe (groupietrackers.herokuapp.com)
+           ↓
+   Serveur Go (proxy) - server.go
+      ├─ proxyAPI("artists")     → /api/artists
+      ├─ proxyAPI("locations")   → /api/locations
+      ├─ proxyAPI("dates")       → /api/dates
+      └─ handleCityImage()       → /api/city-image → Pexels API
+           ↓
+   Frontend JS (fetch)
+      ├─ Promise.all([3 APIs]) en PARALLÈLE
+      ├─ Cache Map pour images
+      └─ Génération HTML dynamique
+           ↓
+   Affichage HTML/CSS
+      ├─ Cartes artistes colorées
+      ├─ Images lieux (Pexels)
+      ├─ Filtres temps réel
+      └─ Navigation fluide
+
+================================================================================
+
+⚡ Améliorations du Refactoring
+
+AVANT :
+   ❌ hashToHue() dupliquée dans 3 fichiers
+   ❌ 3 fonctions serveur identiques (getArtists, getLocations, getDates)
+   ❌ Pas de validation IDs
+   ❌ Pas de documentation
+   ❌ server.go dans mauvais dossier (static/)
+   ❌ Images génériques (Lorem Picsum seulement)
+
+APRÈS :
+   ✅ utils.js : 4 fonctions partagées (hashToHue, normalize, parseId, formatDateLabel)
+   ✅ proxyAPI() : Une seule fonction pour 3 endpoints
+   ✅ Validation ID : parseId() empêche IDs invalides
+   ✅ README.md : Documentation complète (130+ lignes)
+   ✅ Structure : server.go à racine, scripts/ pour tests
+   ✅ Pexels API : Images réelles villes avec fallback
+   ✅ Cache Map : Performance optimisée
+   ✅ city-images.js : Gestion images séparée
+
+================================================================================
+
+📊 Technologies utilisées
+
+Backend :
+   Go 1.x avec net/http
+   Proxy API (évite CORS)
+   defer pour fermeture ressources
+   Structures anonymes pour JSON
+
+Frontend :
+   HTML5 (structure sémantique)
+   CSS3 (Flexbox, Grid, 630 lignes)
+   JavaScript ES6+ (async/await, arrow functions)
+   Fetch API (requêtes HTTP)
+   Promise.all() (parallélisme)
+   Map (cache performant)
+   Set (élimination doublons)
+   Array methods (map, filter, find, some, forEach)
+
+APIs externes :
+   Groupie Trackers API (artistes/lieux/dates)
+   Pexels API (images villes avec auth)
+   Lorem Picsum (fallback sans auth)
+
+Patterns :
+   DRY (Don't Repeat Yourself)
+   Progressive Enhancement
+   Lazy Loading
+   Caching
+   Error Handling
+   Responsive Design
+   Accessibility (ARIA)
+
+================================================================================
+
+🎯 Résumé
+
+Groupie-Tracker = Application web moderne affichant infos sur 52 artistes
+
+Caractéristiques :
+   ✅ 52 artistes avec détails complets
+   ✅ Recherche avancée multi-critères
+   ✅ Images réelles villes (Pexels)
+   ✅ Biographies auto-générées
+   ✅ Couleurs uniques par artiste
+   ✅ Interface intuitive (bulles + filtres)
+   ✅ Performance optimisée
+   ✅ Code refactorisé et structuré
+
+Architecture :
+   Backend : Serveur Go avec proxy API
+   Frontend : HTML5 + CSS3 + JavaScript ES6+
+   APIs : Groupie Trackers + Pexels
+   Fichiers : 1 Go + 5 HTML + 6 JS + 1 CSS
+
+Concepts démontrés :
+   Serveur HTTP Go, Proxy API, async/await, DOM manipulation,
+   Algorithmes hash, Pagination, Cache, Génération contenu,
+   Filtrage temps réel, Progressive Enhancement

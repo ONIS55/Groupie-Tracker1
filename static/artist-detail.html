@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lieux - Groupie Trackers</title>
-    <link rel="stylesheet" href="/css/style.css?v=20260216h">
+    <title>Artiste - Groupie Trackers</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <nav class="navbar">
@@ -12,21 +12,15 @@
             <h1 class="logo">🎵 Groupie Trackers</h1>
             <ul class="nav-links">
                 <li><a href="/">Accueil</a></li>
-                <li><a href="/artists.html">Artistes</a></li>
-                <li><a href="/locations.html" class="active">Lieux</a></li>
+                <li><a href="/artists.html" class="active">Artistes</a></li>
+                <li><a href="/locations.html">Lieux</a></li>
                 <li><a href="/dates.html">Dates</a></li>
             </ul>
         </div>
     </nav>
 
     <section class="container">
-        <h2>Lieux de Concert</h2>
-        
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Rechercher un lieu...">
-        </div>
-
-        <div id="locationsList" class="grid-locations"></div>
+        <div id="artistDetail"></div>
         <div id="loading" class="loading">Chargement...</div>
         <div id="error" class="error"></div>
     </section>
@@ -36,7 +30,6 @@
     </footer>
 
     <script src="/js/utils.js"></script>
-    <script src="/js/city-images.js"></script>
-    <script src="/js/locations.js?v=20260216e"></script>
+    <script src="/js/artist-detail.js?v=20260216l"></script>
 </body>
 </html>

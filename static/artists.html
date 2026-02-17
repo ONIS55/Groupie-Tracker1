@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Artistes - Groupie Trackers</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=20260216i">
 </head>
 <body>
     <nav class="navbar">
@@ -21,20 +21,62 @@
 
     <section class="container">
         <h2>Artistes</h2>
-        
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Rechercher un artiste...">
-        </div>
 
-        <div id="artistsList" class="grid-artists"></div>
-        <div id="loading" class="loading">Chargement...</div>
-        <div id="error" class="error"></div>
+        <div class="artists-layout">
+            <aside class="artists-sidebar" aria-label="Liste des artistes">
+                <h3 class="sidebar-title">Artistes</h3>
+                <div id="artistsBubbleList" class="artists-bubble-list"></div>
+            </aside>
+
+            <div class="artists-content">
+                <div class="search-row">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Rechercher un artiste...">
+                    </div>
+                    <button id="advancedToggle" class="search-advanced-toggle" type="button" aria-expanded="false" title="Recherche avancée">
+                        <span class="search-advanced-icon">🔍</span>
+                    </button>
+                </div>
+
+                <div id="advancedPanel" class="advanced-panel">
+                    <div class="advanced-item">
+                        <label class="advanced-label">
+                            <input type="checkbox" id="filterByLocation">
+                            Lieux
+                        </label>
+                        <input type="text" id="locationInput" placeholder="Ex: paris" class="advanced-input">
+                    </div>
+                    <div class="advanced-item">
+                        <label class="advanced-label">
+                            <input type="checkbox" id="filterByDate">
+                            Dates
+                        </label>
+                        <input type="text" id="dateInput" placeholder="Ex: 2015-06-20" class="advanced-input">
+                    </div>
+                    <div class="advanced-item">
+                        <label class="advanced-label">
+                            <input type="checkbox" id="filterByYear">
+                            Années
+                        </label>
+                        <div class="year-range">
+                            <input type="number" id="yearFrom" placeholder="De" class="advanced-input">
+                            <input type="number" id="yearTo" placeholder="À" class="advanced-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="artistsList" class="grid-artists"></div>
+                <div id="loading" class="loading">Chargement...</div>
+                <div id="error" class="error"></div>
+            </div>
+        </div>
     </section>
 
     <footer>
         <p>&copy; 2026 Groupie Trackers</p>
     </footer>
 
-    <script src="/js/artists.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/artists.js?v=20260216i"></script>
 </body>
 </html>

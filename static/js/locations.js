@@ -48,11 +48,43 @@ function displayLocations(locations) {
         return;
     }
 
-    locations.forEach(location => {
+    locations.forEach(async (location) => {
         const card = document.createElement('div');
         card.className = 'location-card';
-        card.textContent = location.replace(/_/g, ' ');
+        const hue = hashToHue(location);
+
+        // Gradient de secours pendant le chargement de l'image
+        const gradient = `
+            linear-gradient(135deg,
+                hsla(${hue}, 75%, 45%, 0.9) 0%,
+                hsla(${(hue + 30) % 360}, 70%, 50%, 0.85) 35%,
+                hsla(${(hue + 60) % 360}, 65%, 55%, 0.8) 70%,
+                hsla(${(hue + 90) % 360}, 60%, 40%, 0.9) 100%)
+        `;
+
+        card.style.background = gradient;
+        card.innerHTML = `<span class="location-name">${location.replace(/_/g, ' ')}</span>`;
         locationsList.appendChild(card);
+
+        // Charger l'image de manière asynchrone (via Pexels)
+        try {
+            const imageUrl = await getCityImageUrl(location);
+            if (imageUrl) {
+                const img = new Image();
+                img.onload = () => {
+                    card.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.25)), url(${imageUrl})`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'center';
+                };
+                img.onerror = () => {
+                    // Si l'image ne charge pas, garder le gradient
+                    console.log('Image failed to load for:', location);
+                };
+                img.src = imageUrl;
+            }
+        } catch (error) {
+            console.error('Error loading image for', location, error);
+        }
     });
 }
 

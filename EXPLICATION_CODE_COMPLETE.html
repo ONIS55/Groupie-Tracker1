@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explication Complète - Groupie Trackers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            background: #ecf0f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #e74c3c;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+
+        .comment {
+            color: #95a5a6;
+            font-style: italic;
+        }
+
+        .section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+
+        .toc {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            border-left: none;
+            padding-left: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+
+        .architecture {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            pre {
+                page-break-inside: avoid;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📁 EXPLICATION COMPLÈTE DU CODE - GROUPIE TRACKERS</h1>
+
+        <div class="toc">
+            <h2>📑 Table des Matières</h2>
+            <ul>
+                <li><a href="#server">1. server.go - Serveur Backend en Go</a></li>
+                <li><a href="#utils">2. utils.js - Fonctions Utilitaires</a></li>
+                <li><a href="#city-images">3. city-images.js - Gestion Images Pexels</a></li>
+                <li><a href="#artists">4. artists.js - Page des Artistes</a></li>
+                <li><a href="#dates">5. dates.js - Page des Dates</a></li>
+                <li><a href="#locations">6. locations.js - Page des Lieux</a></li>
+                <li><a href="#artist-detail">7. artist-detail.js - Détails Artiste</a></li>
+                <li><a href="#html">8. Fichiers HTML (index, artists, locations, dates, artist-detail)</a></li>
+                <li><a href="#architecture">9. Architecture Complète</a></li>
+            </ul>
+        </div>
+
+        <div class="section" id="server">
+            <h2>1️⃣ server.go - Serveur Backend en Go</h2>
+
+            <p>Le serveur Go est le cœur de l'application. Il sert les fichiers statiques et proxie les requêtes vers l'API externe Groupie Trackers.</p>
+
+            <pre><code>package main  <span class="comment">// Package principal (point d'entrée)</span>
+
+import (
+    "encoding/json"      <span class="comment">// Pour encoder/décoder JSON</span>
+    "fmt"                <span class="comment">// Pour formater du texte</span>
+    "io"                 <span class="comment">// Pour lire les données (ReadAll)</span>
+    "log"                <span class="comment">// Pour logger les erreurs</span>
+    "net/http"           <span class="comment">// Pour créer le serveur HTTP</span>
+    "net/url"            <span class="comment">// Pour encoder les URLs</span>
+)
+
+const pexelsAPIKey = "eJvPoSvCTivdq3Y2jc7srffmrzRkgmfjQcHWJuBu84EaHazgAyg7IUgf"
+<span class="comment">// Constante avec la clé API Pexels</span>
+
+func main() {
+    http.Handle("/", http.FileServer(http.Dir("./static")))
+    <span class="comment">// Sert tous les fichiers du dossier ./static</span>
+    <span class="comment">// http://localhost:8080/ → ./static/index.html</span>
+
+    <span class="comment">// Routes API - Proxie vers groupietrackers.herokuapp.com</span>
+    http.HandleFunc("/api/artists", proxyAPI("artists"))
+    http.HandleFunc("/api/locations", proxyAPI("locations"))
+    http.HandleFunc("/api/dates", proxyAPI("dates"))
+    http.HandleFunc("/api/city-image", handleCityImage)
+
+    <span class="comment">// Affichage console</span>
+    fmt.Println("🎵 Serveur Groupie Trackers démarré!")
+    fmt.Println("  http://localhost:8080")
+
+    log.Fatal(http.ListenAndServe(":8080", nil))
+    <span class="comment">// Démarre le serveur sur le port 8080</span>
+}
+
+func proxyAPI(endpoint string) http.HandlerFunc {
+    <span class="comment">// Retourne un handler qui proxie les requêtes</span>
+    return func(w http.ResponseWriter, r *http.Request) {
+        resp, err := http.Get("https://groupietrackers.herokuapp.com/api/" + endpoint)
+        <span class="comment">// Fait une requête GET vers l'API externe</span>
+
+        if err != nil {
+            http.Error(w, "Erreur lors de la requête", http.StatusInternalServerError)
+            return
+        }
+        defer resp.Body.Close()
+        <span class="comment">// defer = exécute à la fin de la fonction</span>
+
+        body, err := io.ReadAll(resp.Body)
+        <span class="comment">// Lit tout le contenu de la réponse</span>
+
+        if err != nil {
+            http.Error(w, "Erreur lors de la lecture", http.StatusInternalServerError)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        w.Write(body)
+        <span class="comment">// Renvoie le JSON au client</span>
+    }
+}
+
+func handleCityImage(w http.ResponseWriter, r *http.Request) {
+    cityName := r.URL.Query().Get("city")
+    <span class="comment">// Récupère le paramètre ?city=...</span>
+
+    if cityName == "" {
+        http.Error(w, "Paramètre 'city' manquant", http.StatusBadRequest)
+        return
+    }
+
+    pexelsURL := fmt.Sprintf("https://api.pexels.com/v1/search?query=%s&per_page=1&orientation=landscape",
+        url.QueryEscape(cityName+" city"))
+    <span class="comment">// Construit l'URL Pexels avec la ville</span>
+
+    req, err := http.NewRequest("GET", pexelsURL, nil)
+    if err != nil {
+        http.Error(w, "Erreur lors de la création de la requête", http.StatusInternalServerError)
+        return
+    }
+
+    req.Header.Set("Authorization", pexelsAPIKey)
+    <span class="comment">// Ajoute la clé API dans le header</span>
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    <span class="comment">// Exécute la requête</span>
+
+    if err != nil {
+        http.Error(w, "Erreur lors de la requête Pexels", http.StatusInternalServerError)
+        return
+    }
+    defer resp.Body.Close()
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        http.Error(w, "Erreur lors de la lecture de la réponse", http.StatusInternalServerError)
+        return
+    }
+
+    <span class="comment">// Structure anonyme pour parser le JSON Pexels</span>
+    var pexelsResponse struct {
+        Photos []struct {
+            Src struct {
+                Medium string `json:"medium"`
+            } `json:"src"`
+        } `json:"photos"`
+    }
+
+    if err := json.Unmarshal(body, &pexelsResponse); err != nil {
+        <span class="comment">// Unmarshal = convertit JSON en structure Go</span>
+        http.Error(w, "Erreur lors du parsing JSON", http.StatusInternalServerError)
+        return
+    }
+
+    response := map[string]string{}
+    if len(pexelsResponse.Photos) > 0 {
+        response["imageUrl"] = pexelsResponse.Photos[0].Src.Medium
+    } else {
+        response["imageUrl"] = ""
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+    <span class="comment">// Encode et envoie le JSON</span>
+}</code></pre>
+
+            <div class="highlight">
+                <strong>Points clés :</strong>
+                <ul>
+                    <li><code>proxyAPI()</code> : Une seule fonction pour 3 endpoints (évite duplication)</li>
+                    <li>Clé API Pexels stockée côté serveur (sécurité)</li>
+                    <li><code>defer</code> : Ferme automatiquement les connexions HTTP</li>
+                    <li>Gestion d'erreurs complète avec <code>if err != nil</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" id="utils">
+            <h2>2️⃣ utils.js - Fonctions Utilitaires Partagées</h2>
+
+            <p>Ce fichier contient 4 fonctions utilisées par plusieurs pages pour éviter la duplication de code.</p>
+
+            <pre><code><span class="comment">// 1. Génère une couleur unique basée sur un texte</span>
+function hashToHue(value) {
+    const text = String(value || '');
+    let hash = 0;
+
+    for (let i = 0; i < text.length; i += 1) {
+        hash = (hash << 5) - hash + text.charCodeAt(i);
+        <span class="comment">// Algorithm de hash: (hash * 32) - hash + code ASCII</span>
+        hash |= 0;
+        <span class="comment">// Convertit en entier 32 bits</span>
+    }
+
+    return Math.abs(hash) % 360;
+    <span class="comment">// Retourne une teinte HSL entre 0 et 359</span>
+}
+
+<span class="comment">// 2. Normalise un texte pour la recherche</span>
+function normalize(value) {
+    return String(value || '')
+        .toLowerCase()           <span class="comment">// "Paris" → "paris"</span>
+        .trim()                  <span class="comment">// Supprime espaces</span>
+        .replace(/_/g, ' ');     <span class="comment">// "new_york" → "new york"</span>
+}
+
+<span class="comment">// 3. Valide qu'un ID est un nombre > 0</span>
+function parseId(id) {
+    const parsed = parseInt(id, 10);
+    <span class="comment">// parseInt("5", 10) = 5 en base 10</span>
+
+    if (isNaN(parsed) || parsed < 1) {
+        return null;  <span class="comment">// ID invalide</span>
+    }
+    return parsed;
+}
+
+<span class="comment">// 4. Supprime l'astérisque des dates</span>
+function formatDateLabel(value) {
+    return String(value || '')
+        .replace(/^\*/, '')  <span class="comment">// Regex: ^ = début, \* = *</span>
+        .trim();
+}</code></pre>
+
+            <div class="highlight">
+                <strong>Pourquoi ces fonctions ?</strong>
+                <ul>
+                    <li><code>hashToHue()</code> était dupliquée dans 3 fichiers → un seul endroit maintenant</li>
+                    <li><code>normalize()</code> unifie les recherches (insensible à la casse)</li>
+                    <li><code>parseId()</code> sécurise contre les IDs invalides</li>
+                    <li><code>formatDateLabel()</code> nettoie les données de l'API</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" id="city-images">
+            <h2>3️⃣ city-images.js - Gestion des Images Pexels</h2>
+
+            <p>Gère le chargement et la mise en cache des images de villes depuis l'API Pexels.</p>
+
+            <pre><code>const imageCache = new Map();
+<span class="comment">// Map = structure clé-valeur performante</span>
+<span class="comment">// Stocke: "paris-france" → "https://images.pexels.com/..."</span>
+
+async function getCityImageUrl(location) {
+    <span class="comment">// async = peut utiliser await</span>
+
+    if (imageCache.has(location)) {
+        return imageCache.get(location);
+        <span class="comment">// Retourne depuis le cache si déjà chargé</span>
+    }
+
+    const cityName = location
+        .split('-')[0]        <span class="comment">// "paris-france" → "paris"</span>
+        .replace(/_/g, ' ')   <span class="comment">// "new_york" → "new york"</span>
+        .trim();
+
+    try {
+        const response = await fetch(`/api/city-image?city=${encodeURIComponent(cityName)}`);
+        <span class="comment">// await = attend la fin de la requête</span>
+        <span class="comment">// encodeURIComponent = encode pour URL</span>
+
+        const data = await response.json();
+
+        if (data.imageUrl && data.imageUrl !== "") {
+            imageCache.set(location, data.imageUrl);
+            <span class="comment">// Sauvegarde dans le cache</span>
+            return data.imageUrl;
+        }
+    } catch (error) {
+        console.error('Erreur lors de la récupération de l\'image pour', location, error);
+    }
+
+    <span class="comment">// Fallback si Pexels échoue</span>
+    const fallbackUrl = getFallbackImageUrl(location);
+    imageCache.set(location, fallbackUrl);
+    return fallbackUrl;
+}
+
+function getFallbackImageUrl(location) {
+    const imageId = Math.abs(hashToHue(location) * 10 + location.length * 7) % 1000;
+    <span class="comment">// Calcule un ID unique entre 0 et 999</span>
+    return `https://picsum.photos/id/${imageId}/400/300`;
+    <span class="comment">// Lorem Picsum a 1000 images numérotées</span>
+}</code></pre>
+
+            <div class="highlight">
+                <strong>Optimisations :</strong>
+                <ul>
+                    <li><strong>Cache Map</strong> : Évite de refaire les mêmes requêtes API</li>
+                    <li><strong>Fallback</strong> : Lorem Picsum si Pexels ne répond pas</li>
+                    <li><strong>async/await</strong> : Code plus lisible que les promesses</li>
+                    <li><strong>try/catch</strong> : Gestion d'erreurs robuste</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" id="artists">
+            <h2>4️⃣ artists.js - Page Principale des Artistes</h2>
+
+            <p>Gère le chargement, l'affichage et la recherche avancée des artistes.</p>
+
+            <pre><code>let allArtists = [];  <span class="comment">// Tous les artistes</span>
+const artistLocationsById = new Map();  <span class="comment">// ID → lieux</span>
+const artistDatesById = new Map();      <span class="comment">// ID → dates</span>
+
+document.addEventListener('DOMContentLoaded', async () => {
+    <span class="comment">// DOMContentLoaded = HTML chargé</span>
+
+    await Promise.all([loadArtists(), loadLocations(), loadDates()]);
+    <span class="comment">// Promise.all() = exécute 3 requêtes EN PARALLÈLE</span>
+    <span class="comment">// 3x plus rapide que séquentiel!</span>
+
+    setupSearch();
+});
+
+async function loadArtists() {
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const artistsList = document.getElementById('artistsList');
+
+    loading.style.display = 'block';
+    error.style.display = 'none';
+    artistsList.innerHTML = '';
+
+    try {
+        const response = await fetch('/api/artists');
+        if (!response.ok) throw new Error('Erreur réseau');
+        <span class="comment">// throw = lance une erreur capturée par catch</span>
+
+        const data = await response.json();
+        allArtists = data;
+
+        renderArtistBubbles(allArtists);
+        <span class="comment">// Bulles dans la sidebar</span>
+        displayArtists(allArtists);
+        <span class="comment">// Cartes dans la grille</span>
+    } catch (err) {
+        console.error('Erreur:', err);
+        error.textContent = 'Erreur lors du chargement des artistes';
+        error.style.display = 'block';
+    } finally {
+        <span class="comment">// finally = toujours exécuté</span>
+        loading.style.display = 'none';
+    }
+}
+
+function displayArtists(artists) {
+    const artistsList = document.getElementById('artistsList');
+    artistsList.innerHTML = '';
+
+    if (artists.length === 0) {
+        artistsList.innerHTML = '<p>Aucun artiste trouvé</p>';
+        return;
+    }
+
+    artists.forEach(artist => {
+        const card = document.createElement('a');
+        <span class="comment">// Crée un élément &lt;a&gt;</span>
+
+        card.href = `/artist-detail.html?id=${artist.id}`;
+        card.className = 'artist-card';
+
+        const hue = hashToHue(artist.name);
+        card.style.backgroundColor = `hsl(${hue}, 70%, 92%)`;
+        <span class="comment">// HSL = Teinte, Saturation 70%, Luminosité 92%</span>
+
+        card.innerHTML = `
+            &lt;div class="artist-card-content"&gt;
+                &lt;h3&gt;${artist.name}&lt;/h3&gt;
+                &lt;p&gt;&lt;strong&gt;Membres:&lt;/strong&gt; ${artist.members.length}&lt;/p&gt;
+                &lt;p&gt;&lt;strong&gt;Créé:&lt;/strong&gt; ${artist.creationDate}&lt;/p&gt;
+                &lt;p&gt;&lt;strong&gt;Premier album:&lt;/strong&gt; ${artist.firstAlbum}&lt;/p&gt;
+            &lt;/div&gt;
+        `;
+        <span class="comment">// Template literal avec ${} pour insérer variables</span>
+
+        artistsList.appendChild(card);
+        <span class="comment">// Ajoute au DOM</span>
+    });
+}
+
+function setupSearch() {
+    <span class="comment">// ... récupération des éléments ...</span>
+
+    const applyFilters = () => {
+        const query = normalize(searchInput.value);
+        const locationQuery = normalize(locationInput.value);
+        const dateQuery = normalize(dateInput.value);
+
+        const filtered = allArtists.filter(artist => {
+            <span class="comment">// filter() crée un nouveau tableau</span>
+
+            if (query && !normalize(artist.name).includes(query)) {
+                return false;  <span class="comment">// Exclut si nom ne correspond pas</span>
+            }
+
+            if (filterByLocation.checked && locationQuery) {
+                const locations = artistLocationsById.get(artist.id) || [];
+                const hasLocation = locations.some(loc =>
+                    normalize(loc).includes(locationQuery)
+                );
+                <span class="comment">// some() = true si AU MOINS un élément valide</span>
+                if (!hasLocation) return false;
+            }
+
+            <span class="comment">// ... autres filtres ...</span>
+
+            return true;  <span class="comment">// Inclut l'artiste</span>
+        });
+
+        displayArtists(filtered);
+    };
+
+    <span class="comment">// Événements pour filtrage temps réel</span>
+    searchInput.addEventListener('input', applyFilters);
+    locationInput.addEventListener('input', applyFilters);
+    <span class="comment">// ... autres listeners ...</span>
+}</code></pre>
+
+            <div class="highlight">
+                <strong>Fonctionnalités clés :</strong>
+                <ul>
+                    <li><strong>Recherche multi-critères</strong> : Nom, lieu, date, année</li>
+                    <li><strong>Filtrage temps réel</strong> : Résultats instantanés pendant la frappe</li>
+                    <li><strong>Bulles cliquables</strong> : Sidebar pour accès rapide</li>
+                    <li><strong>Couleurs uniques</strong> : Hash du nom → couleur HSL</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" id="dates">
+            <h2>5️⃣ dates.js - Page des Dates avec Pagination</h2>
+
+            <p>Affiche les dates de concert avec pagination (12 éléments par page).</p>
+
+            <pre><code>let datesEntries = [];  <span class="comment">// Toutes les entrées</span>
+let currentPage = 1;
+const itemsPerPage = 12;
+
+function displayDates(datesData) {
+    const datesIndex = normalizeDatesIndex(datesData);
+    <span class="comment">// Normalise le format de l'API</span>
+
+    datesEntries = Object.keys(datesIndex)
+        .map(key => ({ id: key, dates: datesIndex[key] }))
+        <span class="comment">// map() transforme chaque clé en objet</span>
+        .filter(entry => Array.isArray(entry.dates) && entry.dates.length > 0)
+        <span class="comment">// filter() garde seulement les valides</span>
+        .sort((a, b) => Number(a.id) - Number(b.id));
+        <span class="comment">// sort() trie par ID croissant</span>
+
+    currentPage = 1;
+    renderDatesPage();
+}
+
+function renderDatesPage() {
+    const totalPages = Math.max(Math.ceil(datesEntries.length / itemsPerPage), 1);
+    <span class="comment">// Math.ceil() arrondit vers le haut: 13/12 = 1.08 → 2 pages</span>
+
+    currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+    <span class="comment">// Empêche currentPage d'être invalide</span>
+
+    const start = (currentPage - 1) * itemsPerPage;
+    <span class="comment">// Page 1: (1-1)*12 = 0,  Page 2: (2-1)*12 = 12</span>
+
+    const pageItems = datesEntries.slice(start, start + itemsPerPage);
+    <span class="comment">// slice() extrait un sous-tableau</span>
+
+    pageItems.forEach(entry => {
+        const item = document.createElement('div');
+        item.className = 'date-item';
+        renderDateItem(item, entry.dates);
+        datesList.appendChild(item);
+    });
+
+    pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+    prevPage.disabled = currentPage <= 1;
+    nextPage.disabled = currentPage >= totalPages;
+}</code></pre>
+        </div>
+
+        <div class="section" id="locations">
+            <h2>6️⃣ locations.js - Page des Lieux avec Images</h2>
+
+            <p>Affiche les lieux avec des images Pexels chargées asynchronement.</p>
+
+            <pre><code>function displayLocations(locations) {
+    locations.forEach(async (location) => {
+        const card = document.createElement('div');
+        card.className = 'location-card';
+        const hue = hashToHue(location);
+
+        <span class="comment">// Gradient par défaut pendant chargement</span>
+        const gradient = `
+            linear-gradient(135deg,
+                hsla(${hue}, 75%, 45%, 0.9) 0%,
+                hsla(${(hue + 30) % 360}, 70%, 50%, 0.85) 35%,
+                hsla(${(hue + 60) % 360}, 65%, 55%, 0.8) 70%,
+                hsla(${(hue + 90) % 360}, 60%, 40%, 0.9) 100%)
+        `;
+        <span class="comment">// 4 couleurs dégradées avec alpha (transparence)</span>
+
+        card.style.background = gradient;
+        card.innerHTML = `&lt;span&gt;${location.replace(/_/g, ' ')}&lt;/span&gt;`;
+        locationsList.appendChild(card);
+        <span class="comment">// Affiche IMMÉDIATEMENT avec gradient</span>
+
+        try {
+            const imageUrl = await getCityImageUrl(location);
+            <span class="comment">// Charge l'image ASYNCHRONEMENT</span>
+
+            if (imageUrl) {
+                const img = new Image();
+                <span class="comment">// Précharge l'image</span>
+
+                img.onload = () => {
+                    <span class="comment">// Remplace par l'image quand chargée</span>
+                    card.style.backgroundImage =
+                        `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.25)), url(${imageUrl})`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'center';
+                };
+
+                img.onerror = () => {
+                    console.log('Image failed to load for:', location);
+                    <span class="comment">// Garde le gradient</span>
+                };
+
+                img.src = imageUrl;
+            }
+        } catch (error) {
+            console.error('Error loading image for', location, error);
+        }
+    });
+}</code></pre>
+
+            <div class="highlight">
+                <strong>Progressive Enhancement :</strong>
+                <ul>
+                    <li>✅ Gradient coloré s'affiche IMMÉDIATEMENT</li>
+                    <li>⏳ Images se chargent ASYNCHRONEMENT en arrière-plan</li>
+                    <li>🎨 Si Pexels échoue, le gradient reste (pas de blanc cassé)</li>
+                    <li>🚀 L'utilisateur peut naviguer sans attendre les images</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" id="artist-detail">
+            <h2>7️⃣ artist-detail.js - Page Détails d'un Artiste</h2>
+
+            <p>Affiche tous les détails d'un artiste avec biographie générée automatiquement.</p>
+
+            <pre><code>document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    <span class="comment">// Parse ?id=5 → URLSearchParams</span>
+
+    const artistIdRaw = urlParams.get('id');
+    const artistId = parseId(artistIdRaw);
+    <span class="comment">// Valide l'ID avec parseId() de utils.js</span>
+
+    if (!artistId) {
+        window.location.href = '/artists.html';
+        <span class="comment">// Redirige si ID invalide</span>
+        return;
+    }
+
+    loadArtistDetail(artistId);
+});
+
+async function loadArtistDetail(artistId) {
+    try {
+        const [artistsResponse, locationsResponse, datesResponse] =
+            await Promise.all([
+                fetch('/api/artists'),
+                fetch('/api/locations'),
+                fetch('/api/dates')
+            ]);
+        <span class="comment">// 3 requêtes EN PARALLÈLE</span>
+
+        const artists = await artistsResponse.json();
+        const locationsData = await locationsResponse.json();
+        const datesData = await datesResponse.json();
+
+        const artist = artists.find(a => a.id === parseInt(artistId));
+        <span class="comment">// find() retourne le premier match</span>
+
+        if (!artist) {
+            error.textContent = 'Artiste non trouvé';
+            error.style.display = 'block';
+            return;
+        }
+
+        const locations = getLocationsForArtist(locationsData, artist.id);
+        const dates = getDatesForArtist(datesData, artist.id);
+
+        displayArtistDetail(artist, locations, dates);
+    } catch (err) {
+        <span class="comment">// ... gestion erreur ...</span>
+    }
+}
+
+function generateBiography(artist, locations, dates) {
+    const memberCount = artist.members.length;
+    const memberText = memberCount === 1 ?
+        'un artiste solo' :
+        `un groupe de ${memberCount} membres`;
+    <span class="comment">// Opérateur ternaire: condition ? siVrai : siFaux</span>
+
+    let bio = `${artist.name} est ${memberText} formé en ${artist.creationDate}. `;
+
+    if (memberCount > 1) {
+        bio += `Le groupe se compose de ${artist.members.join(', ')}. `;
+        <span class="comment">// join(', ') = ["John", "Paul"] → "John, Paul"</span>
+    }
+
+    <span class="comment">// ... construction du texte ...</span>
+
+    const countries = [...new Set(
+        locations.map(loc => loc.split('-').pop())
+            .filter(Boolean)
+    )];
+    <span class="comment">// 1. map() extrait les pays: "paris-france" → "france"</span>
+    <span class="comment">// 2. filter(Boolean) supprime les valeurs vides</span>
+    <span class="comment">// 3. new Set() élimine les doublons</span>
+    <span class="comment">// 4. [...] convertit Set en tableau</span>
+
+    if (countries.length > 0) {
+        const countryList = countries.slice(0, 3)
+            .map(c => c.replace(/_/g, ' '))
+            .join(', ');
+        bio += `notamment ${countryList}`;
+        if (countries.length > 3) {
+            bio += ` et bien d'autres pays`;
+        }
+    }
+
+    return bio;
+}</code></pre>
+        </div>
+
+        <div class="section" id="html">
+            <h2>8️⃣ Structure des Fichiers HTML</h2>
+
+            <h3>index.html - Page d'accueil</h3>
+            <pre><code>&lt;!DOCTYPE html&gt;  <span class="comment">&lt;!-- HTML5 --&gt;</span>
+&lt;html lang="fr"&gt;  <span class="comment">&lt;!-- Langue française pour accessibilité --&gt;</span>
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;  <span class="comment">&lt;!-- Encodage UTF-8 (accents) --&gt;</span>
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    <span class="comment">&lt;!-- viewport = responsive pour mobile --&gt;</span>
+    &lt;title&gt;Groupie Trackers&lt;/title&gt;
+    &lt;link rel="stylesheet" href="/css/style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;nav class="navbar"&gt;  <span class="comment">&lt;!-- Navigation sémantique HTML5 --&gt;</span>
+        &lt;h1 class="logo"&gt;🎵 Groupie Trackers&lt;/h1&gt;
+        &lt;ul class="nav-links"&gt;
+            &lt;li&gt;&lt;a href="/" class="active"&gt;Accueil&lt;/a&gt;&lt;/li&gt;
+            <span class="comment">&lt;!-- class="active" = style pour page courante --&gt;</span>
+            &lt;li&gt;&lt;a href="/artists.html"&gt;Artistes&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href="/locations.html"&gt;Lieux&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href="/dates.html"&gt;Dates&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/nav&gt;
+
+    &lt;section class="hero"&gt;  <span class="comment">&lt;!-- Section principale --&gt;</span>
+        &lt;h2&gt;Découvrez les Artistes&lt;/h2&gt;
+        &lt;p&gt;Explorez les informations sur vos artistes préférés&lt;/p&gt;
+        &lt;a href="/artists.html" class="btn-primary"&gt;Voir les Artistes&lt;/a&gt;
+    &lt;/section&gt;
+
+    &lt;section class="features"&gt;  <span class="comment">&lt;!-- 3 cartes cliquables --&gt;</span>
+        &lt;a class="feature-card" href="/artists.html"&gt;
+            &lt;h3&gt;🎤 Artistes&lt;/h3&gt;
+            &lt;p&gt;Découvrez les 52 artistes avec leurs informations&lt;/p&gt;
+        &lt;/a&gt;
+        <span class="comment">&lt;!-- ... 2 autres cartes ... --&gt;</span>
+    &lt;/section&gt;
+
+    &lt;footer&gt;
+        &lt;p&gt;&amp;copy; 2026 Groupie Trackers&lt;/p&gt;
+        <span class="comment">&lt;!-- &amp;copy; = symbole © --&gt;</span>
+    &lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <h3>artists.html - Caractéristiques importantes</h3>
+            <pre><code>&lt;link rel="stylesheet" href="/css/style.css?v=20260216i"&gt;
+<span class="comment">&lt;!-- ?v=20260216i = cache busting (force rechargement si modifié) --&gt;</span>
+
+&lt;div id="artistsBubbleList" class="artists-bubble-list"&gt;&lt;/div&gt;
+<span class="comment">&lt;!-- Conteneur vide rempli par JavaScript --&gt;</span>
+
+&lt;input type="checkbox" id="filterByLocation"&gt;
+<span class="comment">&lt;!-- Case à cocher pour activer le filtre lieu --&gt;</span>
+
+&lt;input type="number" id="yearFrom" placeholder="De"&gt;
+<span class="comment">&lt;!-- Champ numérique avec flèches +/- --&gt;</span>
+
+&lt;script src="/js/utils.js"&gt;&lt;/script&gt;
+&lt;script src="/js/artists.js?v=20260216i"&gt;&lt;/script&gt;
+<span class="comment">&lt;!-- ORDRE IMPORTANT: utils.js AVANT artists.js --&gt;</span></code></pre>
+
+            <h3>locations.html - Chargement des scripts</h3>
+            <pre><code>&lt;script src="/js/utils.js"&gt;&lt;/script&gt;
+<span class="comment">&lt;!-- 1. hashToHue() --&gt;</span>
+
+&lt;script src="/js/city-images.js"&gt;&lt;/script&gt;
+<span class="comment">&lt;!-- 2. getCityImageUrl() --&gt;</span>
+
+&lt;script src="/js/locations.js?v=20260216e"&gt;&lt;/script&gt;
+<span class="comment">&lt;!-- 3. Utilise les 2 précédents --&gt;</span></code></pre>
+
+            <h3>dates.html - Pagination</h3>
+            <pre><code>&lt;div class="pagination"&gt;
+    &lt;button id="prevPage" type="button"&gt;Precedent&lt;/button&gt;
+    <span class="comment">&lt;!-- type="button" = pas submit --&gt;</span>
+
+    &lt;span id="pageInfo"&gt;&lt;/span&gt;
+    <span class="comment">&lt;!-- Affichera: "Page 1 / 5" --&gt;</span>
+
+    &lt;button id="nextPage" type="button"&gt;Suivant&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+            <h3>artist-detail.html - Contenu dynamique</h3>
+            <pre><code>&lt;div id="artistDetail"&gt;&lt;/div&gt;
+<span class="comment">&lt;!-- Conteneur VIDE --&gt;</span>
+<span class="comment">&lt;!-- TOUT le HTML est généré par displayArtistDetail() --&gt;</span>
+<span class="comment">&lt;!-- JavaScript créera: header, image, bio, membres, lieux, dates --&gt;</span></code></pre>
+        </div>
+
+        <div class="section architecture" id="architecture">
+            <h2>9️⃣ Architecture Complète du Projet</h2>
+
+            <h3>📊 Flux de Données Complet</h3>
+            <pre><code>1. Utilisateur → http://localhost:8080/artists.html
+
+2. Serveur Go (server.go):
+   └─ http.FileServer envoie: ./static/artists.html
+
+3. Navigateur parse HTML:
+   └─ Charge: /css/style.css
+   └─ Charge: /js/utils.js
+   └─ Charge: /js/artists.js
+
+4. JavaScript s'exécute:
+   └─ DOMContentLoaded
+      └─ Promise.all([
+            fetch('/api/artists'),      → server.go → groupietrackers API
+            fetch('/api/locations'),    → server.go → groupietrackers API
+            fetch('/api/dates')         → server.go → groupietrackers API
+         ])
+      └─ displayArtists(data)
+         └─ Crée 52 cartes &lt;a class="artist-card"&gt;
+         └─ document.appendChild()
+      └─ L'utilisateur voit les artistes!
+
+5. Utilisateur clique sur un artiste:
+   └─ /artist-detail.html?id=5
+      └─ parseId("5") valide → 5
+      └─ loadArtistDetail(5)
+         └─ Promise.all([3 APIs])
+         └─ artist = artists.find(a => a.id === 5)
+         └─ displayArtistDetail()
+            └─ Génère biographie
+            └─ Affiche détails</code></pre>
+
+            <h3>🔗 Relations entre Fichiers</h3>
+            <pre><code>server.go
+├─ Sert static/**  (HTML, CSS, JS, images)
+├─ Proxie /api/artists
+├─ Proxie /api/locations
+├─ Proxie /api/dates
+└─ Gère /api/city-image → Pexels API
+
+utils.js (partagé par 3 pages)
+├─ hashToHue()      → artists.js, locations.js, artist-detail.js
+├─ normalize()      → artists.js
+├─ parseId()        → artist-detail.js
+└─ formatDateLabel() → dates.js (redéfini)
+
+city-images.js
+├─ getCityImageUrl() → locations.js
+└─ getFallbackImageUrl()
+
+HTML
+├─ index.html       (statique, pas de JS)
+├─ artists.html     → utils.js + artists.js
+├─ locations.html   → utils.js + city-images.js + locations.js
+├─ dates.html       → dates.js
+└─ artist-detail.html → utils.js + artist-detail.js</code></pre>
+
+            <h3>🎯 Concepts Techniques Avancés</h3>
+
+            <h4>1. Proxy API (Évite CORS)</h4>
+            <pre><code><span class="comment">// ❌ Sans proxy: CORS Error</span>
+fetch('https://groupietrackers.herokuapp.com/api/artists')
+
+<span class="comment">// ✅ Avec proxy: Pas de problème CORS</span>
+fetch('/api/artists')  → server.go → groupietrackers</code></pre>
+
+            <h4>2. Cache Map (Performance)</h4>
+            <pre><code>const cache = new Map();
+
+<span class="comment">// Première fois: Requête API</span>
+getCityImageUrl("paris-france")  → fetch Pexels → 500ms
+
+<span class="comment">// Deuxième fois: Cache</span>
+getCityImageUrl("paris-france")  → cache.get() → 0ms</code></pre>
+
+            <h4>3. Promise.all() (Parallélisme)</h4>
+            <pre><code><span class="comment">// ❌ Séquentiel: 300ms + 300ms + 300ms = 900ms</span>
+await fetch('/api/artists');
+await fetch('/api/locations');
+await fetch('/api/dates');
+
+<span class="comment">// ✅ Parallèle: max(300ms, 300ms, 300ms) = 300ms</span>
+await Promise.all([
+    fetch('/api/artists'),
+    fetch('/api/locations'),
+    fetch('/api/dates')
+]);</code></pre>
+
+            <h4>4. Hash Function (Couleurs Déterministes)</h4>
+            <pre><code>hashToHue("Queen")    → 234  (toujours)
+hashToHue("Beatles")  → 156  (toujours)
+
+<span class="comment">// Même nom = même couleur à chaque chargement</span>
+hsl(234, 70%, 92%)  = Violet clair pour Queen</code></pre>
+
+            <h4>5. Progressive Enhancement</h4>
+            <pre><code><span class="comment">// 1. Affiché IMMÉDIATEMENT (0ms)</span>
+card.style.background = gradient;
+
+<span class="comment">// 2. Image chargée ASYNCHRONEMENT (500ms)</span>
+const imageUrl = await getCityImageUrl(location);
+
+<span class="comment">// 3. Remplacée QUAND PRÊTE</span>
+img.onload = () => {
+    card.style.backgroundImage = `url(${imageUrl})`;
+};</code></pre>
+
+            <h3>⚠️ Points d'Attention</h3>
+
+            <div class="highlight">
+                <strong>Sécurité :</strong>
+                <ul>
+                    <li>✅ Clé API Pexels côté serveur (pas exposée client)</li>
+                    <li>✅ Validation ID avec <code>parseId()</code></li>
+                    <li>✅ Redirection si ID invalide</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <strong>Performance :</strong>
+                <ul>
+                    <li>✅ Cache Map pour images</li>
+                    <li>✅ Promise.all() pour requêtes parallèles</li>
+                    <li>✅ Pagination (12 éléments/page)</li>
+                    <li>✅ Chargement asynchrone images</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <strong>Maintenabilité :</strong>
+                <ul>
+                    <li>✅ utils.js évite duplication</li>
+                    <li>✅ proxyAPI() unifié pour 3 endpoints</li>
+                    <li>✅ Commentaires explicatifs</li>
+                    <li>✅ Noms de fonctions clairs</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎉 Résumé Final</h2>
+
+            <p><strong>Votre projet Groupie-Tracker est une application web moderne qui :</strong></p>
+
+            <ul>
+                <li>✅ Affiche 52 artistes avec leurs informations complètes</li>
+                <li>✅ Permet une recherche avancée multi-critères (nom, lieu, date, année)</li>
+                <li>✅ Montre les lieux de concert avec de vraies images (Pexels API)</li>
+                <li>✅ Génère automatiquement des biographies d'artistes</li>
+                <li>✅ Utilise un serveur Go comme proxy API</li>
+                <li>✅ Optimise les performances avec cache et requêtes parallèles</li>
+                <li>✅ S'adapte aux mobiles (responsive design)</li>
+            </ul>
+
+            <h3>Technologies Utilisées</h3>
+            <ul>
+                <li><strong>Backend :</strong> Go (serveur HTTP, proxy API)</li>
+                <li><strong>Frontend :</strong> HTML5, CSS3, JavaScript ES6+</li>
+                <li><strong>APIs :</strong> Groupie Trackers (artistes/lieux/dates), Pexels (images)</li>
+                <li><strong>Concepts :</strong> async/await, Promise.all(), Map, fetch, DOM manipulation</li>
+            </ul>
+
+            <h3>Améliorations du Refactoring</h3>
+            <ul>
+                <li>✅ Code dupliqué éliminé → utils.js</li>
+                <li>✅ 3 fonctions serveur → 1 fonction proxyAPI()</li>
+                <li>✅ Validation sécurisée des IDs</li>
+                <li>✅ Documentation complète (README.md)</li>
+                <li>✅ Structure de projet claire</li>
+            </ul>
+        </div>
+
+        <footer style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #ecf0f1; text-align: center; color: #7f8c8d;">
+            <p><strong>📄 Document généré le 17 février 2026</strong></p>
+            <p>Explication détaillée du projet Groupie-Tracker</p>
+            <p>Pour imprimer en PDF : Ctrl+P → Enregistrer au format PDF</p>
+        </footer>
+    </div>
+</body>
+</html>
