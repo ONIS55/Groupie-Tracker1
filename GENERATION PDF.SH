@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "=========================================="
+echo "📄 Génération du PDF"
+echo "=========================================="
+echo ""
+echo "Le fichier HTML va s'ouvrir dans votre navigateur."
+echo "Ensuite :"
+echo "  1. Appuyez sur Ctrl+P"
+echo "  2. Choisissez 'Enregistrer au format PDF'"
+echo "  3. Sauvegardez le fichier"
+echo ""
+xdg-open "$(dirname "$0")/EXPLICATION_CODE_COMPLETE.html"
